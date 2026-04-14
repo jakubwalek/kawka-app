@@ -53,17 +53,33 @@
     .status { min-height: 22px; margin: 8px 0; font-size: 0.95rem; font-weight: 500; }
     .status.ok { color: #166534; }
     .status.error { color: #b91c1c; }
-    .table-panel { overflow: hidden; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb; }
-    th { background: #f9fafb; font-size: 0.85rem; text-transform: uppercase; color: #374151; font-weight: 700; }
-    th:last-child, td:last-child { text-align: right; white-space: nowrap; }
+    
+    /* Poprawiona tabela dla telefonów */
+    .table-panel { overflow: hidden; width: 100%; }
+    table { width: 100%; border-collapse: collapse; table-layout: auto; }
+    th, td { 
+      text-align: left; 
+      padding: 10px 8px; 
+      border-bottom: 1px solid #e5e7eb; 
+      font-size: 0.9rem;
+      vertical-align: middle;
+      word-break: break-word; /* Zapewnia zawijanie długich słów */
+    }
+    th { background: #f9fafb; text-transform: uppercase; color: #374151; font-weight: 700; font-size: 0.75rem; }
+    
+    /* Szerokości kolumn */
+    th:nth-child(1), td:nth-child(1) { width: 85px; font-size: 0.8rem; } /* Kolumna z datą */
+    th:nth-child(3), td:nth-child(3) { text-align: right; width: 90px; font-weight: 600; } /* Kolumna z kwotą */
+    
     .muted { color: #6b7280; text-align: center; padding: 14px 0; }
+
     @media (max-width: 760px) {
       .cards { grid-template-columns: 1fr; }
       form { grid-template-columns: 1fr; }
       .toolbar button { width: 100%; }
-      table { display: block; overflow-x: auto; white-space: nowrap; }
+      /* Na telefonach zmniejszamy paddingi, żeby zmieścić więcej tekstu w linii */
+      th, td { padding: 8px 4px; }
+      h1 { font-size: 1.3rem; }
     }
   </style>
 </head>
