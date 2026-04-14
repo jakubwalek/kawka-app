@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Składka na kawkę</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    body { margin: 0; padding: 12px; background: #f3f4f6; color: #111827; }
+    .app { max-width: 920px; margin: 0 auto; background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px; }
+    h1 { margin: 0 0 8px; font-size: 1.6rem; }
+    p { margin: 0 0 8px; }
+    .cards { margin: 16px 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .card { border: 1px solid #dbeafe; background: #eff6ff; border-radius: 10px; padding: 12px; }
+    .card.expense { border-color: #fde68a; background: #fffbeb; }
+    .card.balance { border-color: #a7f3d0; background: #ecfdf5; font-weight: 700; }
+    .card-label { margin: 0 0 4px; color: #374151; font-size: 0.92rem; }
+    .card-value { margin: 0; font-size: 1.4rem; }
+    .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0 12px; }
+    .tab-button { border: 1px solid #d1d5db; border-radius: 8px; background: #f3f4f6; min-height: 42px; font-weight: 600; cursor: pointer; }
+    .tab-button.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .panel, .table-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; }
+    .panel { padding: 12px; margin-bottom: 12px; }
+    .panel h2 { margin: 0 0 10px; font-size: 1.05rem; }
+    form { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; margin: 0; }
+    input, button { font: inherit; min-height: 44px; border-radius: 8px; padding: 10px 12px; }
+    input { border: 1px solid #d1d5db; }
+    button { border: none; background: #2563eb; color: #fff; font-weight: 600; cursor: pointer; }
+    .toolbar { display: flex; justify-content: flex-end; margin-top: 8px; }
+    .toolbar button { background: #0f766e; min-height: 40px; }
+    .status { min-height: 22px; margin: 8px 0; font-size: 0.95rem; }
+    .status.ok { color: #166534; }
+    .status.error { color: #b91c1c; }
+    .table-panel { overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb; }
+    th:last-child, td:last-child { text-align: right; white-space: nowrap; }
+    .muted { color: #6b7280; text-align: center; padding: 14px 0; }
+    @media (max-width: 760px) {
+      .cards { grid-template-columns: 1fr; }
+      form { grid-template-columns: 1fr; }
+      .toolbar button { width: 100%; }
+      table { display: block; overflow-x: auto; white-space: nowrap; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>Składka na kawkę do ekspresu w SSPdP</h1>
+    <p>Po dokonaniu wpłaty do koszulki w pokoju nauczycielskim lub do osoby aktualnie kupującej kawę, należy zapisać ją tutaj 🙂</p>
+    <p>Dodaj wpłatę i na bieżąco sprawdzaj, ile pieniędzy już zebrano.</p>
+
+    <section class="cards" aria-live="polite">
+      <article class="card"><p class="card-label">Wpłaty łącznie</p><p class="card-value" id="totalContributions">0,00 zł</p></article>
+      <article class="card expense"><p class="card-label">Wydatki łącznie</p><p class="card-value" id="totalExpenses">0,00 zł</p></article>
+      <article class="card balance"><p class="card-label">Stan kasy</p><p class="card-value" id="balanceAmount">0,00 zł</p></article>
+    </section>
+
+    <div class="tabs">
+      <button id="tabContributions" class="tab-button active" type="button">Wpłaty</button>
+      <button id="tabExpenses" class="tab-button" type="button">Wydatki</button>
+    </div>
+
+    <section id="paneContributions" class="tab-pane active">
+      <div class="panel">
+        <h2>Dodaj wpłatę</h2>
+        <form id="contributionForm">
+          <input id="firstName" type="text" placeholder="Imię" required />
+          <input id="lastName" type="text" placeholder="Nazwisko" required />
+          <input id="amount" type="number" min="0.01" step="0.01" placeholder="Kwota (zł)" required />
+          <button type="submit">Dodaj wpłatę</button>
+        </form>
+      </div>
+      <div class="table-panel">
+        <table>
+          <thead><tr><th>Data wpłaty</th><th>Osoba</th><th>Kwota</th></tr></thead>
+          <tbody id="contributionsBody"><tr><td colspan="3" class="muted">Brak wpłat</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="paneExpenses" class="tab-pane">
+      <div class="panel">
+        <h2>Dodaj wydatek</h2>
+        <form id="expenseForm">
+          <input id="expenseName" type="text" placeholder="Opis wydatku" required />
+          <input id="expenseAmount" type="number" min="0.01" step="0.01" placeholder="Kwota (zł)" required />
+          <div></div>
+          <button type="submit">Dodaj wydatek</button>
+        </form>
+      </div>
+      <div class="table-panel">
+        <table>
+          <thead><tr><th>Data wydatku</th><th>Opis</th><th>Kwota</th></tr></thead>
+          <tbody id="expensesBody"><tr><td colspan="3" class="muted">Brak wydatków</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <p id="saveStatus" class="status" aria-live="polite"></p>
+    <div class="toolbar"><button id="refreshData" type="button">Odśwież dane</button></div>
+  </main>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzkWlRP73NpOvQys6L_QUG53WMKafrsCUmeFZB-4XF4cnGnYXEChUujRnjml8iVc_im1g/exec";
+    const STORAGE_KEY = "kawka-dashboard-cache";
+    const REFRESH_INTERVAL_MS = 15000;
+    const contributionForm = document.getElementById("contributionForm");
+    const expenseForm = document.getElementById("expenseForm");
+    const firstNameInput = document.getElementById("firstName");
+    const lastNameInput = document.getElementById("lastName");
+    const amountInput = document.getElementById("amount");
+    const expenseNameInput = document.getElementById("expenseName");
+    const expenseAmountInput = document.getElementById("expenseAmount");
+    const contributionButton = contributionForm.querySelector("button[type='submit']");
+    const expenseButton = expenseForm.querySelector("button[type='submit']");
+    const refreshButton = document.getElementById("refreshData");
+    const tabContributions = document.getElementById("tabContributions");
+    const tabExpenses = document.getElementById("tabExpenses");
+    const paneContributions = document.getElementById("paneContributions");
+    const paneExpenses = document.getElementById("paneExpenses");
+    const totalContributionsEl = document.getElementById("totalContributions");
+    const totalExpensesEl = document.getElementById("totalExpenses");
+    const balanceAmountEl = document.getElementById("balanceAmount");
+    const contributionsBody = document.getElementById("contributionsBody");
+    const expensesBody = document.getElementById("expensesBody");
+    const saveStatus = document.getElementById("saveStatus");
+
+    const formatMoney = (v) => new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" }).format(v);
+    const formatDate = (v) => { const d = new Date(v); if (Number.isNaN(d.getTime())) return "-"; return new Intl.DateTimeFormat("pl-PL", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(d); };
+    const loadDashboard = () => { try { const p = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); return { contributions: Array.isArray(p.contributions) ? p.contributions : [], expenses: Array.isArray(p.expenses) ? p.expenses : [] }; } catch { return { contributions: [], expenses: [] }; } };
+    const saveDashboard = (d) => localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+    const setStatus = (m, t = "") => { saveStatus.textContent = m; saveStatus.className = `status ${t}`.trim(); };
+    const normalizeContribution = (i) => ({ firstName: String(i.firstName || "").trim(), lastName: String(i.lastName || "").trim(), amount: Number(i.amount) || 0, date: i.date || "" });
+    const normalizeExpense = (i) => ({ name: String(i.name || "").trim(), amount: Number(i.amount) || 0, date: i.date || "" });
+    let { contributions, expenses } = loadDashboard();
+
+    const setActiveTab = (tab) => {
+      const c = tab === "contributions";
+      tabContributions.classList.toggle("active", c);
+      tabExpenses.classList.toggle("active", !c);
+      paneContributions.classList.toggle("active", c);
+      paneExpenses.classList.toggle("active", !c);
+    };
+
+    const render = () => {
+      const totalIn = contributions.reduce((s, i) => s + i.amount, 0);
+      const totalOut = expenses.reduce((s, i) => s + i.amount, 0);
+      totalContributionsEl.textContent = formatMoney(totalIn);
+      totalExpensesEl.textContent = formatMoney(totalOut);
+      balanceAmountEl.textContent = formatMoney(totalIn - totalOut);
+      contributionsBody.innerHTML = contributions.length ? [...contributions].sort((a,b)=>new Date(b.date)-new Date(a.date)).map((i)=>`<tr><td>${formatDate(i.date)}</td><td>${i.firstName} ${i.lastName}</td><td>${formatMoney(i.amount)}</td></tr>`).join("") : '<tr><td colspan="3" class="muted">Brak wpłat</td></tr>';
+      expensesBody.innerHTML = expenses.length ? [...expenses].sort((a,b)=>new Date(b.date)-new Date(a.date)).map((i)=>`<tr><td>${formatDate(i.date)}</td><td>${i.name}</td><td>${formatMoney(i.amount)}</td></tr>`).join("") : '<tr><td colspan="3" class="muted">Brak wydatków</td></tr>';
+    };
+
+    const fetchDashboardFromSheet = async () => {
+      const response = await fetch(`${SCRIPT_URL}?action=dashboard`);
+      if (!response.ok) throw new Error(`Błąd HTTP: ${response.status}`);
+      const data = await response.json();
+      if (!data.ok || !Array.isArray(data.contributions) || !Array.isArray(data.expenses)) throw new Error(data.error || "API nie zwróciło pełnych danych.");
+      contributions = data.contributions.map(normalizeContribution);
+      expenses = data.expenses.map(normalizeExpense);
+      saveDashboard({ contributions, expenses });
+      render();
+    };
+
+    const postRecord = async (payload) => {
+      const response = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
+      if (!response.ok) throw new Error(`Błąd HTTP: ${response.status}`);
+      const result = await response.json();
+      if (!result.ok) throw new Error(result.error || "Nie udało się zapisać danych.");
+    };
+
+    const refreshWithStatus = async () => {
+      refreshButton.disabled = true;
+      setStatus("Odświeżanie danych...");
+      try { await fetchDashboardFromSheet(); setStatus("Dane odświeżone", "ok"); }
+      catch { setStatus("Nie udało się odświeżyć danych.", "error"); }
+      finally { refreshButton.disabled = false; }
+    };
+
+    contributionForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const firstName = firstNameInput.value.trim();
+      const lastName = lastNameInput.value.trim();
+      const amount = Number(amountInput.value);
+      if (!firstName || !lastName || !Number.isFinite(amount) || amount <= 0) return alert("Uzupełnij poprawnie wszystkie pola.");
+      contributionButton.disabled = true; expenseButton.disabled = true; setStatus("Zapisywanie wpłaty...");
+      try { await postRecord({ type: "contribution", firstName, lastName, amount }); await fetchDashboardFromSheet(); contributionForm.reset(); firstNameInput.focus(); setStatus("Wpłatę zapisano", "ok"); }
+      catch (error) { setStatus(`Nie zapisano wpłaty: ${error.message}`, "error"); }
+      finally { contributionButton.disabled = false; expenseButton.disabled = false; }
+    });
+
+    expenseForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const name = expenseNameInput.value.trim();
+      const amount = Number(expenseAmountInput.value);
+      if (!name || !Number.isFinite(amount) || amount <= 0) return alert("Uzupełnij poprawnie opis i kwotę wydatku.");
+      contributionButton.disabled = true; expenseButton.disabled = true; setStatus("Zapisywanie wydatku...");
+      try { await postRecord({ type: "expense", name, amount }); await fetchDashboardFromSheet(); expenseForm.reset(); expenseNameInput.focus(); setStatus("Wydatek zapisano", "ok"); }
+      catch (error) { setStatus(`Nie zapisano wydatku: ${error.message}`, "error"); }
+      finally { contributionButton.disabled = false; expenseButton.disabled = false; }
+    });
+
+    tabContributions.addEventListener("click", () => setActiveTab("contributions"));
+    tabExpenses.addEventListener("click", () => setActiveTab("expenses"));
+    refreshButton.addEventListener("click", refreshWithStatus);
+    render();
+    refreshWithStatus().catch(() => {});
+    setInterval(() => { if (document.hidden) return; fetchDashboardFromSheet().catch(() => {}); }, REFRESH_INTERVAL_MS);
+  </script>
+</body>
+</html>
